@@ -1,21 +1,28 @@
 # Harborline · FDE Onboarding Accelerator
 
-> A simulated Forward Deployed Engineering engagement: land in a customer's messy
-> data, build a typed ontology over it, and ship the operational tooling their team
-> uses on day one.
+> **The business outcome:** Harborline Freight — a regional 3PL running its operation on spreadsheet extracts — had no reliable view of on-time performance, no exception queue, and no way to compare carrier costs. This project took them from raw CSVs to a working ops dashboard in days, not quarters. On day one it surfaced **15 at-risk shipments** the ops team couldn't see, established their **on-time baseline (55%)**, and answered **which carrier is cheapest per mile**.
 
-**Client:** Harborline Freight (fictional), a regional 3PL running its operation on
-spreadsheet extracts. **Mission:** get them from raw CSVs to a working ops dashboard
-in days, not quarters.
+Built as a demonstration of forward-deployed engineering: embed in the customer's messy reality, ship working software fast, and leave the team with tooling they actually use.
 
-## The engagement
+## The business problem
 
-| Phase | What happened |
+Harborline's ops team exports CSVs from three systems that were never designed to talk to each other. The result:
+
+- **Delayed shipments discovered by angry customers**, not by the ops team — "delayed" didn't exist as a concept in any extract; it had to be derived from promised vs. actual delivery dates.
+- **No on-time baseline**, so no way to measure improvement or hold carriers accountable.
+- **Carrier costs opaque** — nobody could answer "which carrier is cheapest per mile?" without a day of spreadsheet surgery.
+- **Dirty data everywhere**: 4 date formats in one column, `delviered` typos, `chicago` vs `CHICAGO`, `$1,780.50` currency-formatted numbers, 20%+ null rates.
+
+## What I shipped
+
+| Phase | Business value |
 |---|---|
-| **Discover** | Received three CSV extracts (shipments, carriers, facilities) exactly as the client's ops team exports them. No schema docs, no data dictionary. |
-| **Profile** | The ingest profiler inferred types and flagged the issues: 4 date formats in one column, `delviered` typos, `chicago` vs `CHICAGO` casing drift, `$1,780.50` currency-formatted numbers, 20%+ null rates. |
-| **Model** | Mapped 21 source columns onto a 3-entity typed ontology (Shipment, Carrier, Facility) with confidence-scored auto-suggestions. Materialization coerced, canonicalized, and reported every dropped row. |
-| **Ship** | Ops dashboard (on-time %, cost/mile, exceptions) + natural-language querying — the answers the ops manager actually asks for, in plain English. |
+| **Discover** | Took the three CSV extracts exactly as the ops team exports them. No schema docs, no data dictionary — started from their reality, not an idealized model. |
+| **Profile** | Automated data-quality audit: inferred types, flagged every issue above. The audit itself is a deliverable — it's the remediation backlog. |
+| **Model** | Mapped 21 source columns onto a 3-entity typed ontology (Shipment, Carrier, Facility) with confidence-scored auto-suggestions. Materialization coerced, canonicalized, and reported every dropped row — no silent data loss. |
+| **Ship** | Ops dashboard (on-time %, cost/mile, exceptions queue) + natural-language querying, so the ops manager gets answers in plain English instead of filing a ticket with IT. |
+
+**Day-one findings:** 9 shipments delivered late + 6 in transit past their promised date = **15 exceptions** now visible in one queue. On-time delivery: **55%** — the first honest number the business has ever had.
 
 ## Try it
 
@@ -64,7 +71,7 @@ Shipment / Carrier / Facility (typed records)
       └── lib/nlq.ts        deterministic NL → filters/aggregations
 ```
 
-- **Zero backend.** The whole pipeline runs client-side; session state lives in a React context (`lib/store.tsx`). No API keys, works offline.
+- **Zero backend.** The whole pipeline runs client-side; session state lives in a React context (`lib/store.tsx`). No API keys, works offline — deployable anywhere on day one.
 - **Deterministic NLQ.** Natural-language questions compile to filters and aggregations. `answerQuestion()` in `lib/nlq.ts` is the seam where an LLM planner plugs in later — the `QueryResult` contract wouldn't change.
 - See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for module responsibilities, decisions, and extension points.
 
@@ -88,9 +95,9 @@ CI (`.github/workflows/ci.yml`) runs lint → typecheck → tests → build on e
 
 ## Roadmap — what I'd do on-site next
 
-1. Persist sessions (currently in-memory) and add extract versioning/diffing.
+1. Persist sessions (currently in-memory) and add extract versioning/diffing — so week-over-week on-time trends are automatic.
 2. Plug an LLM planner into `answerQuestion()` for open-ended questions, keeping the deterministic parser as fallback/validator.
-3. Add write-back: let ops annotate exceptions and export the cleaned dataset.
+3. Add write-back: let ops annotate exceptions and export the cleaned dataset — closing the loop from insight to action.
 4. Harden the CSV parser (or swap in papaparse) for truly feral extracts.
 
 ## License
